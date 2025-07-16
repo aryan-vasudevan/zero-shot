@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from PIL import Image
+import supervision as sv
 
 load_dotenv()
 
@@ -42,4 +43,28 @@ response = client.models.generate_content(
     )
 )
 
-print(response.text)
+# Overlay image
+resolution_wh = image.size
+
+detections = sv.Detections.from_vlm(
+    vlm=sv.VLM.GOOGLE_GEMINI_2_5,
+    result=response.text,
+    resolution_wh=resolution_wh
+)
+
+thickness = sv.calculate_optimal_line_thickness(resolution_wh=resolution_wh)
+text_scale = sv.calculate_optimal_text_scale(resolution_wh=resolution_wh)
+
+box_annotator = sv.BoxAnnotator(thickness=thickness)
+label_annotator = sv.LabelAnnotator(
+    smart_position=True,
+    text_color=sv.Color.BLACK,
+    text_scale=text_scale,
+    text_position=sv.Position.CENTER
+)
+
+annotated = image
+for annotator in (box_annotator, label_annotator):
+    annotated = annotator.annotate(scene=annotated, detections=detections)
+
+sv.plot_image(annotated)
