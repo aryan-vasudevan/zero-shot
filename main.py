@@ -21,9 +21,16 @@ MODEL_NAME = "gemini-2.5-flash-preview-05-20"
 TEMPERATURE = 0.5
 
 IMAGE_PATH = "sample.jpg"
-PROMPT = "Detect the motorcycles." + \
-"Output a JSON list of bounding boxes where each entry contains the 2D bounding box in the key \"box_2d\", " + \
-"and the text label in the key \"label\". Use descriptive labels."
+
+# Object detection prompt
+# PROMPT = "Detect the helmets." + \
+# "Output a JSON list of bounding boxes where each entry contains the 2D bounding box in the key \"box_2d\", " + \
+# "and the text label in the key \"label\". Use descriptive labels."
+
+# Instance segmentation prompt
+PROMPT = "Give the segmentation masks for the motorcycles." + \
+"Output a JSON list of segmentation masks where each entry contains the 2D bounding box in the key \"box_2d\", " + \
+"the segmentation mask in key \"mask\", and the text label in the key \"label\". Use descriptive labels."
 
 # Image and response
 image = Image.open(IMAGE_PATH)
@@ -53,7 +60,7 @@ detections = sv.Detections.from_vlm(
 )
 
 thickness = sv.calculate_optimal_line_thickness(resolution_wh=resolution_wh)
-text_scale = sv.calculate_optimal_text_scale(resolution_wh=resolution_wh)
+text_scale = sv.calculate_optimal_text_scale(resolution_wh=resolution_wh) / 3
 
 box_annotator = sv.BoxAnnotator(thickness=thickness)
 label_annotator = sv.LabelAnnotator(
@@ -63,8 +70,18 @@ label_annotator = sv.LabelAnnotator(
     text_position=sv.Position.CENTER
 )
 
+# Object detection annotations
+# annotated = image
+# for annotator in (box_annotator, label_annotator):
+#     annotated = annotator.annotate(scene=annotated, detections=detections)
+
+# sv.plot_image(annotated)
+
+# Instance segemntation annotations
+masks_annotator = sv.MaskAnnotator()
+
 annotated = image
-for annotator in (box_annotator, label_annotator):
+for annotator in (box_annotator, label_annotator, masks_annotator):
     annotated = annotator.annotate(scene=annotated, detections=detections)
 
 sv.plot_image(annotated)
